@@ -225,7 +225,11 @@ Examples: df, liae, df-d, df-ud, liae-ud, ...
 
         use_fp16 = False
         if self.is_exporting:
-            use_fp16 = io.input_bool ("Export quantized?", False, help_message='Makes the exported model faster. If you have problems, disable this option.')
+            if self.force_model_name is not None:
+                # Non-interactive export: skip quantization prompt, default to False
+                use_fp16 = False
+            else:
+                use_fp16 = io.input_bool ("Export quantized?", False, help_message='Makes the exported model faster. If you have problems, disable this option.')
 
         self.gan_power = gan_power = 0.0 if self.pretrain else self.options['gan_power']
         random_warp = False if self.pretrain else self.options['random_warp']
@@ -698,7 +702,12 @@ Examples: df, liae, df-d, df-ud, liae-ud, ...
                 self.update_sample_for_preview(force_new=True)
 
     def export_dfm (self):
-        output_path=self.get_strpath_storage_for_file('model.dfm')
+        import datetime, os as _os
+        _ts = (datetime.datetime.fromtimestamp(_os.path.getmtime(self.model_data_path))
+               if self.model_data_path.exists()
+               else datetime.datetime.now())
+        _stamp = _ts.strftime('%Y-%m-%d_%H-%M')
+        output_path = self.get_strpath_storage_for_file(f'iter{self.iter}_{_stamp}.dfm')
 
         io.log_info(f'Dumping .dfm to {output_path}')
 
